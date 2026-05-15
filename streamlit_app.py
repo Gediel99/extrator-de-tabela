@@ -358,6 +358,28 @@ def source_from_dict(payload: dict) -> SourceConfig:
     )
 
 
+def mapping_rows_to_records(mapping_rows) -> list[dict]:
+    if mapping_rows is None:
+        return []
+    if hasattr(mapping_rows, "to_dict"):
+        return mapping_rows.to_dict("records")
+    if isinstance(mapping_rows, list):
+        return [item for item in mapping_rows if isinstance(item, dict)]
+    if isinstance(mapping_rows, dict):
+        if all(isinstance(value, list) for value in mapping_rows.values()):
+            frame = pd.DataFrame(mapping_rows)
+            return frame.to_dict("records")
+        if "edited_rows" in mapping_rows:
+            rows = {}
+            for row_index, row_values in mapping_rows.get("edited_rows", {}).items():
+                rows[int(row_index)] = {
+                    "Coluna de origem": row_values.get("Coluna de origem", ""),
+                    "Coluna final": row_values.get("Coluna final", ""),
+                }
+            return [rows[index] for index in sorted(rows)]
+    return []
+
+
 def init_state() -> None:
     if "project_name" not in st.session_state:
         st.session_state.project_name = "Projeto de Tabelas"
@@ -414,7 +436,7 @@ def update_source_from_widgets(index: int) -> SourceConfig:
     mapping_rows = st.session_state.get(f"mapping_{source.id}")
     if mapping_rows is not None:
         cleaned_rows = []
-        for row in mapping_rows.to_dict("records"):
+        for row in mapping_rows_to_records(mapping_rows):
             cleaned_rows.append(
                 ColumnMapping(
                     source_name=normalize_text(row.get("Coluna de origem", "")),
