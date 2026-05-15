@@ -586,7 +586,6 @@ for index, payload in enumerate(st.session_state.sources):
             use_container_width=True,
             hide_index=True,
         )
-        st.session_state[f"mapping_{source.id}"] = edited_mapping
 
         preview_frame = st.session_state.preview_cache.get(source.id)
         if preview_frame is not None and not preview_frame.empty:
